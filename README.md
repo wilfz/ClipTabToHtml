@@ -10,4 +10,4 @@ It just parses the tab separated data from the clipboard, builds an html table f
 This HTML fragment is added to the clipboard as an additional format.
 
 Since nowadays most email is formatted as HTML you get a table that actually looks like a table.
-(This little program does not an ned not have a gui and works only on windows.)
+(This little program does not and need not have a gui and works only on windows.)
