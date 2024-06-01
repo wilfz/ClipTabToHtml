@@ -3,7 +3,7 @@ Have you ever tried to add Tab-separated data (e.g. output from SQL Server Manag
 It looks awful!
 
 Here comes this litte tool:
-just copy the content to the clipboeard, run the ClipTabToHtml.exe and paste into your email body, that's it.
+just copy the content to the clipboeard, run ClipTabToHtml.exe and paste into your email body, that's it.
 
 What does the program do?
 It just parses the tab separated data from the clipboard, builds an html table from it, converts all to UTF-8 and embeds all into a construct called HTML fragment.
