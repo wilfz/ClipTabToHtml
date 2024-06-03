@@ -27,6 +27,33 @@
 *.lib
 
 # Executables
+Debug/
+Release/
+x64/
 *.exe
 *.out
 *.app
+
+# CVS
+CVS/
+.#*
+.cvsignore
+
+# CodeLite files
+.codelite
+
+
+# Visual Studio files
+.vs
+*.vcxproj.user
+VS2015/
+
+# Backup files
+*.bkp
+
+# CMake generated files
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CMakeCache.txt
+build/

@@ -1,0 +1,20 @@
+.git\
+.gitignore
+# Executables
+Debug\
+Release\
+x64\
+
+# Visual Studio files
+.vs\
+*.vcxproj.user
+
+# Backup files
+*.bkp
+
+# CMake generated files
+CMakeFiles\
+cmake_install.cmake
+Makefile
+CMakeCache.txt
+build\
