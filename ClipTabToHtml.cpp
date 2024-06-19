@@ -150,7 +150,7 @@ int BuildHtmlTable(const TCHAR* source, TCHAR* target)
 	int tsize = 0;
 	// html table
 	// having style tag inside of body is not W3C-conform, but works.
-	static const TCHAR table_open[] = TEXT("<style> th { border: thin solid; } td { border: thin solid; } </style><table style=\"border: thin solid; border-collapse: collapse;\">");
+	static const TCHAR table_open[] = TEXT("<style> th, td { border: thin solid; padding-right: 4px; padding-left: 4px; } </style><table style=\"border-collapse: collapse;\">");
 	static const TCHAR table_close[] = TEXT("</table>");
 	BOOL bTable = FALSE;
 	// table header
