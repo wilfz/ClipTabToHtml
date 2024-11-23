@@ -107,42 +107,86 @@ BOOL CClipTabToHtmlApp::InitInstance()
 	return FALSE;
 }
 
-void CClipTabToHtmlApp::ConvertClipBoard()
+
+// CopyHtml() - Copies given HTML to the clipboard.
+// The HTML/BODY blanket is provided, so you only need to
+// call it like CallHtml("<b>This is a test</b>");
+void CopyHTML(char* html)
 {
-	//open the clipboard
-#ifdef _UNICODE
-	if (::IsClipboardFormatAvailable(CF_UNICODETEXT) && ::OpenClipboard(NULL))
+	// Create temporary buffer for HTML header...
+	char* buf = new char[400 + strlen(html)];
+	if (!buf) return;
+
+	// Get clipboard id for HTML format...
+	static int cfid = 0;
+	if (!cfid) cfid = RegisterClipboardFormat(TEXT("HTML Format"));
+
+	// Create a template string for the HTML header...
+	strcpy(buf,
+		"Version:0.9\r\n"
+		"StartHTML:00000000\r\n"
+		"EndHTML:00000000\r\n"
+		"StartFragment:00000000\r\n"
+		"EndFragment:00000000\r\n"
+		"<html><body>\r\n"
+		"<!--StartFragment -->\r\n");
+
+	// Append the HTML...
+	strcat(buf, html);
+	strcat(buf, "\r\n");
+	// Finish up the HTML format...
+	strcat(buf,
+		"<!--EndFragment-->\r\n"
+		"</body>\r\n"
+		"</html>");
+
+	// Now go back, calculate all the lengths, and write out the
+	// necessary header information. Note, wsprintf() truncates the
+	// string when you overwrite it so you follow up with code to replace
+	// the 0 appended at the end with a '\r'...
+	char* ptr = strstr(buf, "StartHTML");
+
+	// TODO: Do not use. Consider using one of the following functions instead: 
+	// StringCbPrintf, StringCbPrintfEx, StringCchPrintf, or StringCchPrintfEx. 
+	// See Security Considerations.
+	wsprintfA(ptr + 10, "%08u", strstr(buf, "<html>") - buf);
+	*(ptr + 10 + 8) = '\r';
+
+	ptr = strstr(buf, "EndHTML");
+	wsprintfA(ptr + 8, "%08u", strlen(buf));
+	*(ptr + 8 + 8) = '\r';
+
+	ptr = strstr(buf, "StartFragment");
+	wsprintfA(ptr + 14, "%08u", strstr(buf, "<!--StartFrag") - buf);
+	*(ptr + 14 + 8) = '\r';
+
+	ptr = strstr(buf, "EndFragment");
+	wsprintfA(ptr + 12, "%08u", strstr(buf, "<!--EndFrag") - buf);
+	*(ptr + 12 + 8) = '\r';
+
+	// Now you have everything in place ready to put on the clipboard.
+	// Open the clipboard...
+	if (OpenClipboard(0))
 	{
-		HANDLE hData = ::GetClipboardData(CF_UNICODETEXT);
-		WCHAR* buffer = (WCHAR*)::GlobalLock(hData);
-		int tablesize = BuildHtmlTable(buffer, nullptr); // find out how much memory is needed
-		WCHAR* wtable = new WCHAR[tablesize]; // allocate that memory
-		BuildHtmlTable(buffer, wtable); // wtable is widechar
-		int len = (int) wcslen(wtable) + 1; // include trailing '\0'
-		// each WCHAR may expand to maximal 4 byte in UTF-8
-		char* utf8table = new char[len*4];
-		int cnt = ::WideCharToMultiByte(CP_UTF8, 0, wtable, len, utf8table, len * 4, NULL, FALSE);
-		ASSERT(cnt > 0);
-		delete[] wtable;
-		ASSERT(cnt >= 0);
-		::GlobalUnlock(hData);
-		::CloseClipboard();
-		if (cnt > 0 && cnt <= len * 4)
-			CopyHTML(utf8table); // create as clipboard "HTML Format"
-		delete[] utf8table;
+		// Empty what's in there...
+		//EmptyClipboard();
+
+		// Allocate global memory for transfer...
+		HGLOBAL hText = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, strlen(buf) + 4);
+
+		// Put your string in the global memory...
+		char* ptr = (char*)GlobalLock(hText);
+		strcpy(ptr, buf);
+		GlobalUnlock(hText);
+
+		::SetClipboardData(cfid, hText);
+
+		CloseClipboard();
+		// Free memory...
+		GlobalFree(hText);
 	}
-//	else
-#endif
-/*
-		if (IsClipboardFormatAvailable(CF_TEXT) && ::OpenClipboard(NULL))
-		{
-			HANDLE hData = GetClipboardData(CF_TEXT);
-			char* buffer = (char*)GlobalLock(hData);
-			sClipboard = buffer;
-			GlobalUnlock(hData);
-			CloseClipboard();
-		}
-*/
+	// Clean up...
+	delete[] buf;
 }
 
 int BuildHtmlTable(const TCHAR* source, TCHAR* target)
@@ -398,83 +442,40 @@ int BuildHtmlTable(const TCHAR* source, TCHAR* target)
 	return tsize;
 }
 
-// CopyHtml() - Copies given HTML to the clipboard.
-// The HTML/BODY blanket is provided, so you only need to
-// call it like CallHtml("<b>This is a test</b>");
-void CopyHTML(char* html)
+void CClipTabToHtmlApp::ConvertClipBoard()
 {
-	// Create temporary buffer for HTML header...
-	char* buf = new char[400 + strlen(html)];
-	if (!buf) return;
-
-	// Get clipboard id for HTML format...
-	static int cfid = 0;
-	if (!cfid) cfid = RegisterClipboardFormat(TEXT("HTML Format"));
-
-	// Create a template string for the HTML header...
-	strcpy(buf,
-		"Version:0.9\r\n"
-		"StartHTML:00000000\r\n"
-		"EndHTML:00000000\r\n"
-		"StartFragment:00000000\r\n"
-		"EndFragment:00000000\r\n"
-		"<html><body>\r\n"
-		"<!--StartFragment -->\r\n");
-
-	// Append the HTML...
-	strcat(buf, html);
-	strcat(buf, "\r\n");
-	// Finish up the HTML format...
-	strcat(buf,
-		"<!--EndFragment-->\r\n"
-		"</body>\r\n"
-		"</html>");
-
-	// Now go back, calculate all the lengths, and write out the
-	// necessary header information. Note, wsprintf() truncates the
-	// string when you overwrite it so you follow up with code to replace
-	// the 0 appended at the end with a '\r'...
-	char* ptr = strstr(buf, "StartHTML");
-
-	// TODO: Do not use. Consider using one of the following functions instead: 
-	// StringCbPrintf, StringCbPrintfEx, StringCchPrintf, or StringCchPrintfEx. 
-	// See Security Considerations.
-	wsprintfA(ptr + 10, "%08u", strstr(buf, "<html>") - buf);
-	*(ptr + 10 + 8) = '\r';
-
-	ptr = strstr(buf, "EndHTML");
-	wsprintfA(ptr + 8, "%08u", strlen(buf));
-	*(ptr + 8 + 8) = '\r';
-
-	ptr = strstr(buf, "StartFragment");
-	wsprintfA(ptr + 14, "%08u", strstr(buf, "<!--StartFrag") - buf);
-	*(ptr + 14 + 8) = '\r';
-
-	ptr = strstr(buf, "EndFragment");
-	wsprintfA(ptr + 12, "%08u", strstr(buf, "<!--EndFrag") - buf);
-	*(ptr + 12 + 8) = '\r';
-
-	// Now you have everything in place ready to put on the clipboard.
-	// Open the clipboard...
-	if (OpenClipboard(0))
+	//open the clipboard
+#ifdef _UNICODE
+	if (::IsClipboardFormatAvailable(CF_UNICODETEXT) && ::OpenClipboard(NULL))
 	{
-		// Empty what's in there...
-		//EmptyClipboard();
-
-		// Allocate global memory for transfer...
-		HGLOBAL hText = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, strlen(buf) + 4);
-
-		// Put your string in the global memory...
-		char* ptr = (char*)GlobalLock(hText);
-		strcpy(ptr, buf);
-		GlobalUnlock(hText);
-
-		::SetClipboardData(cfid, hText);
-
-		CloseClipboard();
-		// Free memory...
-		GlobalFree(hText);
+		HANDLE hData = ::GetClipboardData(CF_UNICODETEXT);
+		WCHAR* buffer = (WCHAR*)::GlobalLock(hData);
+		int tablesize = BuildHtmlTable(buffer, nullptr); // find out how much memory is needed
+		WCHAR* wtable = new WCHAR[tablesize]; // allocate that memory
+		BuildHtmlTable(buffer, wtable); // wtable is widechar
+		int len = (int)wcslen(wtable) + 1; // include trailing '\0'
+		// each WCHAR may expand to maximal 4 byte in UTF-8
+		char* utf8table = new char[len * 4];
+		int cnt = ::WideCharToMultiByte(CP_UTF8, 0, wtable, len, utf8table, len * 4, NULL, FALSE);
+		ASSERT(cnt > 0);
+		delete[] wtable;
+		ASSERT(cnt >= 0);
+		::GlobalUnlock(hData);
+		::CloseClipboard();
+		if (cnt > 0 && cnt <= len * 4)
+			CopyHTML(utf8table); // create as clipboard "HTML Format"
+		delete[] utf8table;
 	}
-	// Clean up...
-	delete[] buf;
+	//	else
+#endif
+/*
+		if (IsClipboardFormatAvailable(CF_TEXT) && ::OpenClipboard(NULL))
+		{
+			HANDLE hData = GetClipboardData(CF_TEXT);
+			char* buffer = (char*)GlobalLock(hData);
+			sClipboard = buffer;
+			GlobalUnlock(hData);
+			CloseClipboard();
+		}
+*/
 }
