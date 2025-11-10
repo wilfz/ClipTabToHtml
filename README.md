@@ -11,3 +11,5 @@ This HTML fragment is added to the clipboard as an additional format.
 
 Since nowadays most email is formatted as HTML you get a table that actually looks like a table.
 (This little program does not and need not have a gui and works only on windows.)
+
+This is a standalone program. If you are using [CLCL clipboard manager](https://nakka.com/soft/clcl/index_eng.html), you will find the same functionality and more inside my [tool_clip](https://github.com/wilfz/CLCL-tool_clip) plugin.
